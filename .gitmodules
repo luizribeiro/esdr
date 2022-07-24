@@ -1,0 +1,3 @@
+[submodule "FutureSDR"]
+	path = FutureSDR
+	url = https://github.com/FutureSDR/FutureSDR/
