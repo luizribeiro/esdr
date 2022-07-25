@@ -28,8 +28,14 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
+    # this is needed so we use clang from xcode instead of the nixpkgs'
+    # apple_sdk. it is only necessary because apple_sdk_11_0 isn't available
+    # yet for x86_64, so we can't use frameworks.System (which is required
+    # by futuresdr)
     export CC=/usr/bin/clang
     export CXX=/usr/bin/clang++
+    export PATH=/usr/bin:$PATH
+
     export SOAPY_SDR_PLUGIN_PATH="${pkgs.soapyrtlsdr}/lib/SoapySDR/modules0.8"
   '';
 }
