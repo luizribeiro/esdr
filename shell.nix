@@ -18,8 +18,13 @@ in
 
 pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
+    # dev tools
+    rust-analyzer
+    rustfmt
+
     # futuresdr dependencies
     cargo
+    rustc
     libiconv
     pkg-config
     soapysdr
