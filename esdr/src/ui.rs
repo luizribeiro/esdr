@@ -3,6 +3,8 @@ use std::borrow::Cow;
 use eframe::egui::{self, DragValue};
 use egui_node_graph::*;
 
+use crate::radio;
+
 pub struct ESDRNodeData {}
 
 #[derive(PartialEq, Eq)]
@@ -174,12 +176,14 @@ type ESDREditorState =
 
 pub struct ESDRApp {
     state: ESDREditorState,
+    radio: Option<radio::Radio>,
 }
 
 impl Default for ESDRApp {
     fn default() -> Self {
         Self {
             state: GraphEditorState::new(1.0, ESDRGraphState::default()),
+            radio: None,
         }
     }
 }
@@ -189,6 +193,18 @@ impl eframe::App for ESDRApp {
         egui::TopBottomPanel::top("top").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 egui::widgets::global_dark_light_mode_switch(ui);
+                ui.horizontal(|ui| {
+                    if ui
+                        .button(if self.radio.is_some() { "⏹" } else { "▶" })
+                        .clicked()
+                    {
+                        if self.radio.is_none() {
+                            self.radio = Some(radio::start());
+                        } else {
+                            self.radio = None;
+                        }
+                    }
+                });
             });
         });
         let _graph_response = egui::CentralPanel::default()

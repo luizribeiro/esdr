@@ -12,3 +12,4 @@ futuresdr = { version = "0.0.20", features = ["soapy", "audio"] }
 futuredsp = "0.0.4"
 eframe = "0.18.0"
 egui_node_graph = "0.3.0"
+async-task = "4.0.3"
