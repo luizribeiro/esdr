@@ -2,7 +2,8 @@ use std::borrow::Cow;
 
 use eframe::egui::{self, DragValue};
 use egui_node_graph::*;
-
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 use uuid::Uuid;
 
 use crate::radio;
@@ -25,7 +26,7 @@ pub enum ESDRValueType {
     Scalar { value: f64 },
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, EnumIter)]
 pub enum ESDRNodeTemplate {
     SoapySDR,
     Shift,
@@ -150,14 +151,7 @@ impl NodeTemplateIter for AllESDRNodeTemplates {
     type Item = ESDRNodeTemplate;
 
     fn all_kinds(&self) -> Vec<Self::Item> {
-        vec![
-            ESDRNodeTemplate::SoapySDR,
-            ESDRNodeTemplate::Shift,
-            ESDRNodeTemplate::Resamp1,
-            ESDRNodeTemplate::FMDemodulator,
-            ESDRNodeTemplate::Resamp2,
-            ESDRNodeTemplate::AudioOutput,
-        ]
+        ESDRNodeTemplate::iter().collect()
     }
 }
 

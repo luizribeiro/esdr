@@ -14,3 +14,5 @@ eframe = "0.18.0"
 egui_node_graph = "0.3.0"
 async-task = "4.0.3"
 uuid = { version = "1.1.2", features = ["v4", "fast-rng"] }
+strum = "0.24.1"
+strum_macros = "0.24.2"
