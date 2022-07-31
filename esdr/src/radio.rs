@@ -69,8 +69,9 @@ fn build_block(graph: &ESDRGraph, node: &Node<ESDRNodeData>) -> Block {
             })
         }
         ESDRNodeTemplate::Resamp2 => {
-            let cutoff = 2_000.0 / (AUDIO_RATE * AUDIO_MULT) as f64;
-            let transition = 10_000.0 / (AUDIO_RATE * AUDIO_MULT) as f64;
+            let cutoff = scalar_value(graph, node, "cutoff") / (AUDIO_RATE * AUDIO_MULT) as f64;
+            let transition =
+                scalar_value(graph, node, "transition") / (AUDIO_RATE * AUDIO_MULT) as f64;
             let audio_filter_taps = firdes::kaiser::lowpass::<f32>(cutoff, transition, 0.1);
             FirBuilder::new_resampling_with_taps::<f32, f32, _>(
                 1,

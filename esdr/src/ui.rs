@@ -134,6 +134,8 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
             }
             ESDRNodeTemplate::Resamp2 => {
                 input_stream(graph, "in");
+                scalar_value(graph, "cutoff", 2000.0);
+                scalar_value(graph, "transition", 10000.0);
                 output_stream(graph, "out");
             }
             ESDRNodeTemplate::AudioOutput => {
