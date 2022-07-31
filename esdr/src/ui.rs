@@ -3,9 +3,15 @@ use std::borrow::Cow;
 use eframe::egui::{self, DragValue};
 use egui_node_graph::*;
 
+use uuid::Uuid;
+
 use crate::radio;
 
-pub struct ESDRNodeData {}
+#[allow(dead_code)]
+pub struct ESDRNodeData {
+    uuid: Uuid,
+    pub template: ESDRNodeTemplate,
+}
 
 #[derive(PartialEq, Eq)]
 pub enum ESDRDataType {
@@ -22,7 +28,10 @@ pub enum ESDRValueType {
 #[derive(Clone, Copy)]
 pub enum ESDRNodeTemplate {
     SoapySDR,
+    Shift,
+    Resamp1,
     FMDemodulator,
+    Resamp2,
     AudioOutput,
 }
 
@@ -56,7 +65,10 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
     fn node_finder_label(&self) -> &str {
         match self {
             ESDRNodeTemplate::SoapySDR => "Soapy SDR",
+            ESDRNodeTemplate::Shift => "Shift",
+            ESDRNodeTemplate::Resamp1 => "Resamp 1",
             ESDRNodeTemplate::FMDemodulator => "FM Demodulator",
+            ESDRNodeTemplate::Resamp2 => "Resamp 2",
             ESDRNodeTemplate::AudioOutput => "Audio Output",
         }
     }
@@ -66,7 +78,10 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
     }
 
     fn user_data(&self) -> Self::NodeData {
-        ESDRNodeData {}
+        ESDRNodeData {
+            uuid: Uuid::new_v4(),
+            template: self.clone(),
+        }
     }
 
     fn build_node(
@@ -106,12 +121,24 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
                 scalar_value(graph, "sample rate", 1000000.0);
                 scalar_value(graph, "frequency", 90900000.0);
             }
+            ESDRNodeTemplate::Shift => {
+                input_stream(graph, "in");
+                output_stream(graph, "out");
+            }
+            ESDRNodeTemplate::Resamp1 => {
+                input_stream(graph, "in");
+                output_stream(graph, "out");
+            }
             ESDRNodeTemplate::FMDemodulator => {
                 input_stream(graph, "in");
                 output_stream(graph, "out");
             }
+            ESDRNodeTemplate::Resamp2 => {
+                input_stream(graph, "in");
+                output_stream(graph, "out");
+            }
             ESDRNodeTemplate::AudioOutput => {
-                input_stream(graph, "out");
+                input_stream(graph, "in");
             }
         }
     }
@@ -124,7 +151,10 @@ impl NodeTemplateIter for AllESDRNodeTemplates {
     fn all_kinds(&self) -> Vec<Self::Item> {
         vec![
             ESDRNodeTemplate::SoapySDR,
+            ESDRNodeTemplate::Shift,
+            ESDRNodeTemplate::Resamp1,
             ESDRNodeTemplate::FMDemodulator,
+            ESDRNodeTemplate::Resamp2,
             ESDRNodeTemplate::AudioOutput,
         ]
     }

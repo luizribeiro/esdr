@@ -13,3 +13,4 @@ futuredsp = "0.0.4"
 eframe = "0.18.0"
 egui_node_graph = "0.3.0"
 async-task = "4.0.3"
+uuid = { version = "1.1.2", features = ["v4", "fast-rng"] }
