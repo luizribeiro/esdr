@@ -170,7 +170,7 @@ impl NodeDataTrait for ESDRNodeData {
     }
 }
 
-type ESDRGraph = Graph<ESDRNodeData, ESDRDataType, ESDRValueType>;
+pub type ESDRGraph = Graph<ESDRNodeData, ESDRDataType, ESDRValueType>;
 type ESDREditorState =
     GraphEditorState<ESDRNodeData, ESDRDataType, ESDRValueType, ESDRNodeTemplate, ESDRGraphState>;
 
@@ -199,7 +199,7 @@ impl eframe::App for ESDRApp {
                         .clicked()
                     {
                         if self.radio.is_none() {
-                            self.radio = Some(radio::start());
+                            self.radio = Some(radio::start(&self.state.graph));
                         } else {
                             self.radio = None;
                         }

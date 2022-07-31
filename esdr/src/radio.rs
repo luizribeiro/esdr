@@ -1,3 +1,5 @@
+use crate::ui::ESDRGraph;
+
 use futuredsp::firdes;
 use futuresdr::async_io;
 use futuresdr::blocks::audio::AudioSink;
@@ -18,7 +20,7 @@ pub struct Radio {
     task: async_task::Task<Result<Flowgraph, anyhow::Error>>,
 }
 
-pub fn start() -> Radio {
+fn build_flowgraph(graph: &ESDRGraph) -> Flowgraph {
     let sample_rate = RATE as u32;
     let freq_offset = RATE / 4.0;
     println!("Frequency Offset {:?}", freq_offset);
@@ -90,7 +92,11 @@ pub fn start() -> Radio {
     fg.connect_stream(demod, "out", resamp2, "in").unwrap();
     fg.connect_stream(resamp2, "out", snk, "in").unwrap();
 
-    // Start the flowgraph and save the handle
+    return fg;
+}
+
+pub fn start(graph: &ESDRGraph) -> Radio {
+    let fg = build_flowgraph(graph);
     let (res, mut _handle) = async_io::block_on(Runtime::new().start(fg));
     return Radio { task: res };
 }
