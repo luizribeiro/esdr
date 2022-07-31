@@ -1,8 +1,11 @@
 use crate::ui::ESDRGraph;
+use crate::ui::ESDRNodeData;
 use crate::ui::ESDRNodeTemplate;
+use crate::ui::ESDRValueType;
 
 use std::collections::HashMap;
 
+use egui_node_graph::Node;
 use futuredsp::firdes;
 use futuresdr::async_io;
 use futuresdr::blocks::audio::AudioSink;
@@ -17,22 +20,29 @@ use futuresdr::runtime::Runtime;
 const RATE: f64 = 1000000.0;
 const AUDIO_RATE: u32 = 48000;
 const AUDIO_MULT: u32 = 5;
-const GAIN: f64 = 30.0;
-const FREQUENCY: f64 = 90900000.0;
 
 #[allow(dead_code)]
 pub struct Radio {
     task: async_task::Task<Result<Flowgraph, anyhow::Error>>,
 }
 
-fn build_block(template: ESDRNodeTemplate) -> Block {
+fn scalar_value(graph: &ESDRGraph, node: &Node<ESDRNodeData>, name: &str) -> f64 {
+    let input_id = node.get_input(name).unwrap();
+    let input = graph.get_input(input_id);
+    match input.value {
+        ESDRValueType::Scalar { value } => value,
+        _ => panic!("Unexpected value type"),
+    }
+}
+
+fn build_block(graph: &ESDRGraph, node: &Node<ESDRNodeData>) -> Block {
     let freq_offset = RATE / 4.0;
-    match template {
+    match node.user_data.template {
         ESDRNodeTemplate::SoapySDR => SoapySourceBuilder::new()
             .filter("")
-            .freq(FREQUENCY + freq_offset)
+            .freq(scalar_value(graph, node, "freq") + freq_offset)
             .sample_rate(RATE)
-            .gain(GAIN)
+            .gain(scalar_value(graph, node, "gain"))
             .build(),
         ESDRNodeTemplate::Shift => {
             let mut last = Complex32::new(1.0, 0.0);
@@ -77,8 +87,7 @@ fn build_flowgraph(graph: &ESDRGraph) -> Flowgraph {
     let mut node_to_blocks = HashMap::new();
 
     for node in &graph.nodes {
-        let data = &node.1.user_data;
-        let block = build_block(data.template);
+        let block = build_block(graph, node.1);
         let block_id = fg.add_block(block);
         node_to_blocks.insert(node.0, block_id);
     }

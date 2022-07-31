@@ -22,7 +22,7 @@ pub enum ESDRDataType {
 #[derive(Copy, Clone, Debug)]
 pub enum ESDRValueType {
     Stream,
-    Scalar { value: f32 },
+    Scalar { value: f64 },
 }
 
 #[derive(Clone, Copy)]
@@ -89,7 +89,7 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
         graph: &mut Graph<Self::NodeData, Self::DataType, Self::ValueType>,
         node_id: NodeId,
     ) {
-        let scalar_value = |graph: &mut ESDRGraph, name: &str, value: f32| {
+        let scalar_value = |graph: &mut ESDRGraph, name: &str, value: f64| {
             graph.add_input_param(
                 node_id,
                 name.to_string(),
@@ -117,9 +117,8 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
         match self {
             ESDRNodeTemplate::SoapySDR => {
                 output_stream(graph, "out");
+                scalar_value(graph, "freq", 90900000.0);
                 scalar_value(graph, "gain", 30.0);
-                scalar_value(graph, "sample rate", 1000000.0);
-                scalar_value(graph, "frequency", 90900000.0);
             }
             ESDRNodeTemplate::Shift => {
                 input_stream(graph, "in");
