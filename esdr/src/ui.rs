@@ -20,10 +20,15 @@ pub enum ESDRDataType {
     Scalar,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub enum ESDRValueType {
     Stream,
-    Scalar { value: f64 },
+    Scalar {
+        node_id: NodeId,
+        field: String,
+        value: f64,
+        allow_updates: bool,
+    },
 }
 
 #[derive(Clone, Copy, EnumIter)]
@@ -36,8 +41,17 @@ pub enum ESDRNodeTemplate {
     AudioOutput,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ESDRResponse {}
+#[derive(Clone, Debug)]
+pub struct UpdateScalarPayload {
+    node_id: NodeId,
+    field: String,
+    value: f64,
+}
+
+#[derive(Clone, Debug)]
+pub enum ESDRResponse {
+    UpdateScalar(UpdateScalarPayload),
+}
 
 #[derive(Default)]
 pub struct ESDRGraphState {}
@@ -90,12 +104,17 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
         graph: &mut Graph<Self::NodeData, Self::DataType, Self::ValueType>,
         node_id: NodeId,
     ) {
-        let scalar_value = |graph: &mut ESDRGraph, name: &str, value: f64| {
+        let scalar_value = |graph: &mut ESDRGraph, name: &str, value: f64, allow_updates: bool| {
             graph.add_input_param(
                 node_id,
                 name.to_string(),
                 ESDRDataType::Scalar,
-                ESDRValueType::Scalar { value },
+                ESDRValueType::Scalar {
+                    node_id,
+                    field: name.to_string(),
+                    value,
+                    allow_updates,
+                },
                 InputParamKind::ConstantOnly,
                 true,
             );
@@ -118,8 +137,8 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
         match self {
             ESDRNodeTemplate::SoapySDR => {
                 output_stream(graph, "out");
-                scalar_value(graph, "freq", 90900000.0);
-                scalar_value(graph, "gain", 30.0);
+                scalar_value(graph, "freq", 90900000.0, true);
+                scalar_value(graph, "gain", 30.0, false);
             }
             ESDRNodeTemplate::Shift => {
                 input_stream(graph, "in");
@@ -135,8 +154,8 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
             }
             ESDRNodeTemplate::Resamp2 => {
                 input_stream(graph, "in");
-                scalar_value(graph, "cutoff", 2000.0);
-                scalar_value(graph, "transition", 10000.0);
+                scalar_value(graph, "cutoff", 2000.0, false);
+                scalar_value(graph, "transition", 10000.0, false);
                 output_stream(graph, "out");
             }
             ESDRNodeTemplate::AudioOutput => {
@@ -158,18 +177,30 @@ impl NodeTemplateIter for AllESDRNodeTemplates {
 impl WidgetValueTrait for ESDRValueType {
     type Response = ESDRResponse;
     fn value_widget(&mut self, param_name: &str, ui: &mut egui::Ui) -> Vec<ESDRResponse> {
+        let mut responses = vec![];
         match self {
             ESDRValueType::Stream => {
                 ui.label(param_name);
             }
-            ESDRValueType::Scalar { value } => {
+            ESDRValueType::Scalar {
+                node_id,
+                field,
+                value,
+                ..
+            } => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
-                    ui.add(DragValue::new(value));
+                    if ui.add(DragValue::new(value)).changed() {
+                        responses.push(ESDRResponse::UpdateScalar(UpdateScalarPayload {
+                            node_id: *node_id,
+                            field: field.to_string(),
+                            value: *value,
+                        }));
+                    }
                 });
             }
         }
-        Vec::new()
+        responses
     }
 }
 
@@ -232,11 +263,22 @@ impl eframe::App for ESDRApp {
                 });
             });
         });
-        let _graph_response = egui::CentralPanel::default()
+        let graph_response = egui::CentralPanel::default()
             .show(ctx, |ui| {
                 self.state.draw_graph_editor(ui, AllESDRNodeTemplates)
             })
             .inner;
+        for response in graph_response.node_responses {
+            if let NodeResponse::User(user_event) = response {
+                match user_event {
+                    ESDRResponse::UpdateScalar(ev) => {
+                        if let Some(radio) = &mut self.radio {
+                            radio.update_scalar(ev.node_id, &ev.field, ev.value);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
