@@ -1,4 +1,5 @@
 use crate::blocks::ESDRBlock;
+use crate::blocks::ESDRBlockInput;
 use crate::ui::ESDRGraph;
 use crate::ui::ESDRValueType;
 
@@ -26,7 +27,8 @@ pub fn start(graph: &ESDRGraph) -> Radio {
     let mut message_id_for_field = HashMap::new();
 
     for node in &graph.nodes {
-        let block = node.1.user_data.block_type.block(graph, node.1);
+        let input = ESDRBlockInput::new(&graph, &node.1);
+        let block = node.1.user_data.block_type.block(input);
         for (name, input_id) in &node.1.inputs {
             let input = &graph.get_input(input_id.clone()).value;
             let allow_updates = match input {
