@@ -32,8 +32,8 @@ impl ESDRBlockInput<'_> {
     pub fn scalar(&self, name: &str) -> f64 {
         let input_id = self.node.get_input(name).unwrap();
         let input = self.graph.get_input(input_id);
-        match input.value {
-            ESDRValueType::Scalar { value, .. } => value,
+        match &input.value {
+            ESDRValueType::Scalar { config, .. } => config.value,
             _ => panic!("Unexpected value type"),
         }
     }

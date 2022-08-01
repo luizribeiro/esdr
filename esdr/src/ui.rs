@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use eframe::egui::{self, DragValue};
+use eframe::egui;
 use egui_node_graph::*;
 use futuresdr::runtime::Block;
 use strum::IntoEnumIterator;
@@ -10,6 +10,7 @@ use uuid::Uuid;
 use crate::blocks::*;
 use crate::param::Param;
 use crate::param::ParamTrait;
+use crate::param::ScalarParam;
 use crate::radio;
 
 #[allow(dead_code)]
@@ -29,9 +30,7 @@ pub enum ESDRValueType {
     Stream,
     Scalar {
         node_id: NodeId,
-        field: String,
-        value: f64,
-        allow_updates: bool,
+        config: ScalarParam,
     },
 }
 
@@ -48,9 +47,9 @@ pub enum ESDRBlockType {
 
 #[derive(Clone, Debug)]
 pub struct UpdateScalarPayload {
-    node_id: NodeId,
-    field: String,
-    value: f64,
+    pub node_id: NodeId,
+    pub field: String,
+    pub value: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -125,22 +124,8 @@ impl WidgetValueTrait for ESDRValueType {
             ESDRValueType::Stream => {
                 ui.label(param_name);
             }
-            ESDRValueType::Scalar {
-                node_id,
-                field,
-                value,
-                ..
-            } => {
-                ui.horizontal(|ui| {
-                    ui.label(param_name);
-                    if ui.add(DragValue::new(value)).changed() {
-                        responses.push(ESDRResponse::UpdateScalar(UpdateScalarPayload {
-                            node_id: *node_id,
-                            field: field.to_string(),
-                            value: *value,
-                        }));
-                    }
-                });
+            ESDRValueType::Scalar { node_id, config } => {
+                responses.append(&mut config.widget(ui, *node_id));
             }
         }
         responses

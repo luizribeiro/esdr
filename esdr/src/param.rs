@@ -1,10 +1,14 @@
+use eframe::egui::{self, DragValue};
 use egui_node_graph::InputParamKind;
 use egui_node_graph::NodeId;
 
 use crate::ui::ESDRDataType;
 use crate::ui::ESDRGraph;
+use crate::ui::ESDRResponse;
 use crate::ui::ESDRValueType;
+use crate::ui::UpdateScalarPayload;
 
+#[derive(Clone, Debug)]
 #[enum_dispatch(ParamTrait)]
 pub enum Param {
     Scalar(ScalarParam),
@@ -15,6 +19,7 @@ pub enum Param {
 #[enum_dispatch]
 pub trait ParamTrait {
     fn add_param(self, graph: &mut ESDRGraph, node_id: NodeId) -> ();
+    fn widget(&mut self, ui: &mut egui::Ui, node_id: NodeId) -> Vec<ESDRResponse>;
 }
 
 impl Param {
@@ -31,14 +36,14 @@ impl Param {
     }
 }
 
-#[derive(Default, Builder, Debug)]
+#[derive(Default, Clone, Builder, Debug)]
 #[builder(public, setter(into), build_fn(private, name = "build_impl"))]
 pub struct ScalarParam {
-    name: String,
-    #[builder(default = "0.0")]
-    initial_value: f64,
+    pub name: String,
+    #[builder(default = "0.0", setter(prefix = "initial"))]
+    pub value: f64,
     #[builder(default = "false")]
-    allow_updates: bool,
+    pub allow_updates: bool,
 }
 
 impl ParamTrait for ScalarParam {
@@ -49,13 +54,26 @@ impl ParamTrait for ScalarParam {
             ESDRDataType::Scalar,
             ESDRValueType::Scalar {
                 node_id,
-                field: self.name.clone(),
-                value: self.initial_value,
-                allow_updates: self.allow_updates,
+                config: self.clone(),
             },
             InputParamKind::ConstantOnly,
             true,
         );
+    }
+
+    fn widget(&mut self, ui: &mut egui::Ui, node_id: NodeId) -> Vec<ESDRResponse> {
+        let mut responses = vec![];
+        ui.horizontal(|ui| {
+            ui.label(&self.name);
+            if ui.add(DragValue::new(&mut self.value)).changed() {
+                responses.push(ESDRResponse::UpdateScalar(UpdateScalarPayload {
+                    node_id,
+                    field: self.name.to_string(),
+                    value: self.value,
+                }));
+            }
+        });
+        responses
     }
 }
 
@@ -65,7 +83,7 @@ impl ScalarParamBuilder {
     }
 }
 
-#[derive(Default, Builder, Debug)]
+#[derive(Default, Clone, Builder, Debug)]
 #[builder(public, setter(into), build_fn(private, name = "build_impl"))]
 pub struct InputStream {
     name: String,
@@ -82,6 +100,11 @@ impl ParamTrait for InputStream {
             true,
         );
     }
+
+    fn widget(&mut self, ui: &mut egui::Ui, _node_id: NodeId) -> Vec<ESDRResponse> {
+        ui.label(&self.name);
+        vec![]
+    }
 }
 
 impl InputStreamBuilder {
@@ -90,7 +113,7 @@ impl InputStreamBuilder {
     }
 }
 
-#[derive(Default, Builder, Debug)]
+#[derive(Default, Clone, Builder, Debug)]
 #[builder(public, setter(into), build_fn(private, name = "build_impl"))]
 pub struct OutputStream {
     name: String,
@@ -99,6 +122,11 @@ pub struct OutputStream {
 impl ParamTrait for OutputStream {
     fn add_param(self, graph: &mut ESDRGraph, node_id: NodeId) -> () {
         graph.add_output_param(node_id, self.name.clone(), ESDRDataType::Stream);
+    }
+
+    fn widget(&mut self, ui: &mut egui::Ui, _node_id: NodeId) -> Vec<ESDRResponse> {
+        ui.label(&self.name);
+        vec![]
     }
 }
 

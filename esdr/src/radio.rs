@@ -32,7 +32,7 @@ pub fn start(graph: &ESDRGraph) -> Radio {
         for (name, input_id) in &node.1.inputs {
             let input = &graph.get_input(input_id.clone()).value;
             let allow_updates = match input {
-                ESDRValueType::Scalar { allow_updates, .. } => *allow_updates,
+                ESDRValueType::Scalar { config, .. } => config.allow_updates,
                 _ => false,
             };
             if allow_updates {
