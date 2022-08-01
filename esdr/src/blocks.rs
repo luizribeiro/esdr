@@ -1,4 +1,4 @@
-use crate::ui::ESDRDataType;
+use crate::param::Param;
 use crate::ui::ESDRGraph;
 use crate::ui::ESDRNodeData;
 use crate::ui::ESDRValueType;
@@ -16,7 +16,7 @@ use futuresdr::runtime::Block;
 pub trait ESDRBlock {
     fn name(self) -> &'static str;
     fn block(self, input: ESDRBlockInput) -> Block;
-    fn params(self) -> Vec<ESDRBlockParam>;
+    fn params(self) -> Vec<Param>;
 }
 
 pub struct ESDRBlockInput<'a> {
@@ -37,11 +37,6 @@ impl ESDRBlockInput<'_> {
             _ => panic!("Unexpected value type"),
         }
     }
-}
-
-pub struct ESDRBlockParam {
-    name: String,
-    data_type: ESDRDataType,
 }
 
 const RATE: f64 = 1000000.0;
@@ -65,9 +60,15 @@ impl ESDRBlock for SoapySDRBlock {
             .build()
     }
 
-    fn params(self) -> Vec<ESDRBlockParam> {
-        // TODO
-        vec![]
+    fn params(self) -> Vec<Param> {
+        vec![
+            Param::output_stream("out").build(),
+            Param::scalar("freq")
+                .initial_value(90900000.0)
+                .allow_updates(true)
+                .build(),
+            Param::scalar("gain").initial_value(30.0).build(),
+        ]
     }
 }
 
@@ -90,9 +91,11 @@ impl ESDRBlock for ShiftBlock {
         })
     }
 
-    fn params(self) -> Vec<ESDRBlockParam> {
-        // TODO
-        vec![]
+    fn params(self) -> Vec<Param> {
+        vec![
+            Param::input_stream("in").build(),
+            Param::output_stream("out").build(),
+        ]
     }
 }
 
@@ -109,9 +112,11 @@ impl ESDRBlock for Resamp1Block {
         FirBuilder::new_resampling::<Complex32>(interp, decim)
     }
 
-    fn params(self) -> Vec<ESDRBlockParam> {
-        // TODO
-        vec![]
+    fn params(self) -> Vec<Param> {
+        vec![
+            Param::input_stream("in").build(),
+            Param::output_stream("out").build(),
+        ]
     }
 }
 
@@ -131,9 +136,11 @@ impl ESDRBlock for FMDemodulatorBlock {
         })
     }
 
-    fn params(self) -> Vec<ESDRBlockParam> {
-        // TODO
-        vec![]
+    fn params(self) -> Vec<Param> {
+        vec![
+            Param::input_stream("in").build(),
+            Param::output_stream("out").build(),
+        ]
     }
 }
 
@@ -155,9 +162,13 @@ impl ESDRBlock for Resamp2Block {
         )
     }
 
-    fn params(self) -> Vec<ESDRBlockParam> {
-        // TODO
-        vec![]
+    fn params(self) -> Vec<Param> {
+        vec![
+            Param::input_stream("in").build(),
+            Param::scalar("cutoff").initial_value(2000.0).build(),
+            Param::scalar("transition").initial_value(10000.0).build(),
+            Param::output_stream("out").build(),
+        ]
     }
 }
 
@@ -172,8 +183,7 @@ impl ESDRBlock for AudioOutputBlock {
         AudioSink::new(AUDIO_RATE, 1)
     }
 
-    fn params(self) -> Vec<ESDRBlockParam> {
-        // TODO
-        vec![]
+    fn params(self) -> Vec<Param> {
+        vec![Param::input_stream("in").build()]
     }
 }

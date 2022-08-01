@@ -8,6 +8,8 @@ use strum_macros::EnumIter;
 use uuid::Uuid;
 
 use crate::blocks::*;
+use crate::param::Param;
+use crate::param::ParamTrait;
 use crate::radio;
 
 #[allow(dead_code)]
@@ -100,63 +102,8 @@ impl NodeTemplateTrait for ESDRBlockType {
         graph: &mut Graph<Self::NodeData, Self::DataType, Self::ValueType>,
         node_id: NodeId,
     ) {
-        let scalar_value = |graph: &mut ESDRGraph, name: &str, value: f64, allow_updates: bool| {
-            graph.add_input_param(
-                node_id,
-                name.to_string(),
-                ESDRDataType::Scalar,
-                ESDRValueType::Scalar {
-                    node_id,
-                    field: name.to_string(),
-                    value,
-                    allow_updates,
-                },
-                InputParamKind::ConstantOnly,
-                true,
-            );
-        };
-
-        let input_stream = |graph: &mut ESDRGraph, name: &str| {
-            graph.add_input_param(
-                node_id,
-                name.to_string(),
-                ESDRDataType::Stream,
-                ESDRValueType::Stream,
-                InputParamKind::ConnectionOnly,
-                true,
-            );
-        };
-        let output_stream = |graph: &mut ESDRGraph, name: &str| {
-            graph.add_output_param(node_id, name.to_string(), ESDRDataType::Stream);
-        };
-
-        match self {
-            ESDRBlockType::SoapySDR(_) => {
-                output_stream(graph, "out");
-                scalar_value(graph, "freq", 90900000.0, true);
-                scalar_value(graph, "gain", 30.0, false);
-            }
-            ESDRBlockType::Shift(_) => {
-                input_stream(graph, "in");
-                output_stream(graph, "out");
-            }
-            ESDRBlockType::Resamp1(_) => {
-                input_stream(graph, "in");
-                output_stream(graph, "out");
-            }
-            ESDRBlockType::FMDemodulator(_) => {
-                input_stream(graph, "in");
-                output_stream(graph, "out");
-            }
-            ESDRBlockType::Resamp2(_) => {
-                input_stream(graph, "in");
-                scalar_value(graph, "cutoff", 2000.0, false);
-                scalar_value(graph, "transition", 10000.0, false);
-                output_stream(graph, "out");
-            }
-            ESDRBlockType::AudioOutput(_) => {
-                input_stream(graph, "in");
-            }
+        for param in self.params() {
+            param.add_param(graph, node_id);
         }
     }
 }
