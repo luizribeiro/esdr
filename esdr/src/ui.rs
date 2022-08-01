@@ -2,16 +2,18 @@ use std::borrow::Cow;
 
 use eframe::egui::{self, DragValue};
 use egui_node_graph::*;
+use futuresdr::runtime::Block;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use uuid::Uuid;
 
+use crate::blocks::*;
 use crate::radio;
 
 #[allow(dead_code)]
 pub struct ESDRNodeData {
     uuid: Uuid,
-    pub template: ESDRNodeTemplate,
+    pub block_type: ESDRBlockType,
 }
 
 #[derive(PartialEq, Eq)]
@@ -31,14 +33,15 @@ pub enum ESDRValueType {
     },
 }
 
+#[enum_dispatch(ESDRBlock)]
 #[derive(Clone, Copy, EnumIter)]
-pub enum ESDRNodeTemplate {
-    SoapySDR,
-    Shift,
-    Resamp1,
-    FMDemodulator,
-    Resamp2,
-    AudioOutput,
+pub enum ESDRBlockType {
+    SoapySDR(SoapySDRBlock),
+    Shift(ShiftBlock),
+    Resamp1(Resamp1Block),
+    FMDemodulator(FMDemodulatorBlock),
+    Resamp2(Resamp2Block),
+    AudioOutput(AudioOutputBlock),
 }
 
 #[derive(Clone, Debug)]
@@ -72,20 +75,13 @@ impl DataTypeTrait<ESDRGraphState> for ESDRDataType {
     }
 }
 
-impl NodeTemplateTrait for ESDRNodeTemplate {
+impl NodeTemplateTrait for ESDRBlockType {
     type NodeData = ESDRNodeData;
     type DataType = ESDRDataType;
     type ValueType = ESDRValueType;
 
     fn node_finder_label(&self) -> &str {
-        match self {
-            ESDRNodeTemplate::SoapySDR => "Soapy SDR",
-            ESDRNodeTemplate::Shift => "Shift",
-            ESDRNodeTemplate::Resamp1 => "Resamp 1",
-            ESDRNodeTemplate::FMDemodulator => "FM Demodulator",
-            ESDRNodeTemplate::Resamp2 => "Resamp 2",
-            ESDRNodeTemplate::AudioOutput => "Audio Output",
-        }
+        self.name()
     }
 
     fn node_graph_label(&self) -> String {
@@ -95,7 +91,7 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
     fn user_data(&self) -> Self::NodeData {
         ESDRNodeData {
             uuid: Uuid::new_v4(),
-            template: self.clone(),
+            block_type: self.clone(),
         }
     }
 
@@ -135,42 +131,42 @@ impl NodeTemplateTrait for ESDRNodeTemplate {
         };
 
         match self {
-            ESDRNodeTemplate::SoapySDR => {
+            ESDRBlockType::SoapySDR(_) => {
                 output_stream(graph, "out");
                 scalar_value(graph, "freq", 90900000.0, true);
                 scalar_value(graph, "gain", 30.0, false);
             }
-            ESDRNodeTemplate::Shift => {
+            ESDRBlockType::Shift(_) => {
                 input_stream(graph, "in");
                 output_stream(graph, "out");
             }
-            ESDRNodeTemplate::Resamp1 => {
+            ESDRBlockType::Resamp1(_) => {
                 input_stream(graph, "in");
                 output_stream(graph, "out");
             }
-            ESDRNodeTemplate::FMDemodulator => {
+            ESDRBlockType::FMDemodulator(_) => {
                 input_stream(graph, "in");
                 output_stream(graph, "out");
             }
-            ESDRNodeTemplate::Resamp2 => {
+            ESDRBlockType::Resamp2(_) => {
                 input_stream(graph, "in");
                 scalar_value(graph, "cutoff", 2000.0, false);
                 scalar_value(graph, "transition", 10000.0, false);
                 output_stream(graph, "out");
             }
-            ESDRNodeTemplate::AudioOutput => {
+            ESDRBlockType::AudioOutput(_) => {
                 input_stream(graph, "in");
             }
         }
     }
 }
 
-pub struct AllESDRNodeTemplates;
-impl NodeTemplateIter for AllESDRNodeTemplates {
-    type Item = ESDRNodeTemplate;
+pub struct AllESDRBlockTypes;
+impl NodeTemplateIter for AllESDRBlockTypes {
+    type Item = ESDRBlockType;
 
     fn all_kinds(&self) -> Vec<Self::Item> {
-        ESDRNodeTemplate::iter().collect()
+        ESDRBlockType::iter().collect()
     }
 }
 
@@ -228,7 +224,7 @@ impl NodeDataTrait for ESDRNodeData {
 
 pub type ESDRGraph = Graph<ESDRNodeData, ESDRDataType, ESDRValueType>;
 type ESDREditorState =
-    GraphEditorState<ESDRNodeData, ESDRDataType, ESDRValueType, ESDRNodeTemplate, ESDRGraphState>;
+    GraphEditorState<ESDRNodeData, ESDRDataType, ESDRValueType, ESDRBlockType, ESDRGraphState>;
 
 pub struct ESDRApp {
     state: ESDREditorState,
@@ -265,7 +261,7 @@ impl eframe::App for ESDRApp {
         });
         let graph_response = egui::CentralPanel::default()
             .show(ctx, |ui| {
-                self.state.draw_graph_editor(ui, AllESDRNodeTemplates)
+                self.state.draw_graph_editor(ui, AllESDRBlockTypes)
             })
             .inner;
         for response in graph_response.node_responses {
