@@ -1,4 +1,4 @@
-use crate::param::Param;
+use crate::params::Param;
 use crate::ui::ESDRGraph;
 use crate::ui::ESDRNodeData;
 use crate::ui::ESDRValueType;

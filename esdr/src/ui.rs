@@ -6,10 +6,10 @@ use strum::IntoEnumIterator;
 use uuid::Uuid;
 
 use crate::blocks::*;
-use crate::param::InputStream;
-use crate::param::Param;
-use crate::param::ParamTrait;
-use crate::param::ScalarParam;
+use crate::params::InputStream;
+use crate::params::Param;
+use crate::params::ParamTrait;
+use crate::params::ScalarParam;
 use crate::radio;
 
 #[allow(dead_code)]

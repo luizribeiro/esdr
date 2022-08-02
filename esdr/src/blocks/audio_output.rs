@@ -1,7 +1,7 @@
 use crate::blocks::ESDRBlock;
 use crate::blocks::ESDRBlockInput;
 use crate::consts;
-use crate::param::Param;
+use crate::params::Param;
 
 use futuresdr::blocks::audio::AudioSink;
 use futuresdr::runtime::Block;

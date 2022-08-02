@@ -2,7 +2,7 @@
 
 mod blocks;
 mod consts;
-mod param;
+mod params;
 mod radio;
 mod ui;
 

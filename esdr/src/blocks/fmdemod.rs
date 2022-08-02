@@ -1,6 +1,6 @@
 use crate::blocks::ESDRBlock;
 use crate::blocks::ESDRBlockInput;
-use crate::param::Param;
+use crate::params::Param;
 
 use futuresdr::blocks::Apply;
 use futuresdr::num_complex::Complex32;
