@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use async_task::Task;
 use egui_node_graph::NodeId;
 use futuresdr::async_io;
+use futuresdr::runtime::scheduler::SmolScheduler;
 use futuresdr::runtime::Flowgraph;
 use futuresdr::runtime::FlowgraphHandle;
 use futuresdr::runtime::Pmt;
@@ -15,8 +16,11 @@ use futuresdr::runtime::Runtime;
 
 #[allow(dead_code)]
 pub struct Radio {
-    task: Task<Result<Flowgraph, anyhow::Error>>,
-    handle: FlowgraphHandle,
+    running: Option<(
+        Task<Result<Flowgraph, anyhow::Error>>,
+        FlowgraphHandle,
+        Runtime<SmolScheduler>,
+    )>,
     node_id_to_block_id: HashMap<NodeId, usize>,
     message_id_for_field: HashMap<(NodeId, String), usize>,
 }
@@ -55,31 +59,39 @@ pub fn start(graph: &ESDRGraph) -> Radio {
     }
 
     // TODO: turn this into an async function instead of blocking
-    let (task, handle) = async_io::block_on(Runtime::new().start(fg));
+    let runtime = Runtime::new();
+    let (task, handle) = async_io::block_on(runtime.start(fg));
 
     return Radio {
-        task,
-        handle,
+        running: Some((task, handle, runtime)),
         node_id_to_block_id,
         message_id_for_field,
     };
 }
 
 impl Radio {
-    pub fn stop(&mut self) -> () {
+    pub fn stop(&mut self) {
         // TODO: turn this into an async function
-        let _result = async_io::block_on(self.handle.terminate());
+        if let Some((task, mut handle, _)) = self.running.take() {
+            async_io::block_on(async move {
+                handle.terminate().await.unwrap();
+                task.await.unwrap();
+            });
+        }
     }
 
-    pub fn update_scalar(&mut self, node_id: NodeId, field: &str, value: f64) -> () {
-        let port_id = self.message_id_for_field[&(node_id, field.to_string())];
-        let block_id = self.node_id_to_block_id[&node_id];
-        // FIXME this is super hacky
-        let freq_offset = 250000.0;
-        async_io::block_on(
-            self.handle
-                .call(block_id, port_id, Pmt::Double(value + freq_offset)),
-        )
-        .unwrap();
+    pub fn update_scalar(&mut self, node_id: NodeId, field: &str, value: f64) {
+        if let Some(ref mut running) = self.running {
+            let port_id = self.message_id_for_field[&(node_id, field.to_string())];
+            let block_id = self.node_id_to_block_id[&node_id];
+            // FIXME this is super hacky
+            let freq_offset = 250000.0;
+            async_io::block_on(
+                running
+                    .1
+                    .call(block_id, port_id, Pmt::Double(value + freq_offset)),
+            )
+            .unwrap();
+        }
     }
 }
