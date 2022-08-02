@@ -1,16 +1,17 @@
+use crate::blocks::ESDRBlock;
+use crate::blocks::ESDRBlockType;
+use crate::params::input_stream::InputStream;
+use crate::params::scalar::ScalarParam;
+use crate::params::Param;
+use crate::params::ParamTrait;
+use crate::radio;
+
 use std::borrow::Cow;
 
 use eframe::egui;
 use egui_node_graph::*;
 use strum::IntoEnumIterator;
 use uuid::Uuid;
-
-use crate::blocks::*;
-use crate::params::input_stream::InputStream;
-use crate::params::scalar::ScalarParam;
-use crate::params::Param;
-use crate::params::ParamTrait;
-use crate::radio;
 
 #[allow(dead_code)]
 pub struct ESDRNodeData {
