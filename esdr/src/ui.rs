@@ -2,9 +2,7 @@ use std::borrow::Cow;
 
 use eframe::egui;
 use egui_node_graph::*;
-use futuresdr::runtime::Block;
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
 use uuid::Uuid;
 
 use crate::blocks::*;
@@ -37,17 +35,6 @@ pub enum ESDRValueType {
         value: f64,
         config: ScalarParam,
     },
-}
-
-#[enum_dispatch(ESDRBlock)]
-#[derive(Clone, Copy, EnumIter)]
-pub enum ESDRBlockType {
-    SoapySDR(SoapySDRBlock),
-    Shift(ShiftBlock),
-    Resamp1(Resamp1Block),
-    FMDemodulator(FMDemodulatorBlock),
-    Resamp2(Resamp2Block),
-    AudioOutput(AudioOutputBlock),
 }
 
 #[derive(Clone, Debug)]
