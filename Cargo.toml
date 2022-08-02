@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.58"
 clap = { version = "3.0.13", features = ["derive"] }
-futuresdr = { version = "0.0.20", features = ["soapy", "audio"] }
+futuresdr = { version = "0.0.21", features = ["soapy", "audio"] }
 futuredsp = "0.0.4"
 eframe = "0.18.0"
 egui_node_graph = "0.3.0"

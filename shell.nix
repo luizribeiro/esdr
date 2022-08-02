@@ -2,7 +2,7 @@ let
   overlays = [
     (final: prev: {
       soapysdr = prev.soapysdr.overrideAttrs (_old: {
-        patches = [ ./soapysdr.patch ];
+        patches = [ ./patches/soapysdr.patch ];
       });
       soapyrtlsdr = prev.soapyrtlsdr.overrideAttrs (old: {
         nativeBuildInputs = old.nativeBuildInputs ++ [

@@ -54,6 +54,7 @@ pub fn start(graph: &ESDRGraph) -> Radio {
         fg.connect_stream(src, "out", dest, "in").unwrap();
     }
 
+    // TODO: turn this into an async function instead of blocking
     let (task, handle) = async_io::block_on(Runtime::new().start(fg));
 
     return Radio {
@@ -65,6 +66,11 @@ pub fn start(graph: &ESDRGraph) -> Radio {
 }
 
 impl Radio {
+    pub fn stop(&mut self) -> () {
+        // TODO: turn this into an async function
+        let _result = async_io::block_on(self.handle.terminate());
+    }
+
     pub fn update_scalar(&mut self, node_id: NodeId, field: &str, value: f64) -> () {
         let port_id = self.message_id_for_field[&(node_id, field.to_string())];
         let block_id = self.node_id_to_block_id[&node_id];

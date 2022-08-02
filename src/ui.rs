@@ -187,10 +187,11 @@ impl eframe::App for ESDRApp {
                         .button(if self.radio.is_some() { "⏹" } else { "▶" })
                         .clicked()
                     {
-                        if self.radio.is_none() {
-                            self.radio = Some(radio::start(&self.state.graph));
-                        } else {
+                        if let Some(radio) = &mut self.radio {
+                            radio.stop();
                             self.radio = None;
+                        } else {
+                            self.radio = Some(radio::start(&self.state.graph));
                         }
                     }
                 });
