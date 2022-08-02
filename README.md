@@ -1,6 +1,6 @@
 # eSDR
 
-A Software Defined Radio app written in Rust with [FortuneSDR](https://www.fortunesdr.org/), inspired by GNU Radio.
+A Software Defined Radio app written in Rust with [FutureSDR](https://www.futuresdr.org/), inspired by GNU Radio.
 
 ## Adding new blocks
 
