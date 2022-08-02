@@ -14,16 +14,16 @@ impl ESDRBlock for Resamp1Block {
         "Resamp 1"
     }
 
-    fn block(self, _input: ESDRBlockInput) -> Block {
-        let interp = (consts::AUDIO_RATE * consts::AUDIO_MULT) as usize;
-        let decim = consts::RATE as usize;
-        FirBuilder::new_resampling::<Complex32>(interp, decim)
-    }
-
     fn params(self) -> Vec<Param> {
         vec![
             Param::input_stream("in").build(),
             Param::output_stream("out").build(),
         ]
+    }
+
+    fn block(self, _input: ESDRBlockInput) -> Block {
+        let interp = (consts::AUDIO_RATE * consts::AUDIO_MULT) as usize;
+        let decim = consts::RATE as usize;
+        FirBuilder::new_resampling::<Complex32>(interp, decim)
     }
 }

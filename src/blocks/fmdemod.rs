@@ -13,6 +13,13 @@ impl ESDRBlock for FMDemodulatorBlock {
         "FM Demodulator"
     }
 
+    fn params(self) -> Vec<Param> {
+        vec![
+            Param::input_stream("in").build(),
+            Param::output_stream("out").build(),
+        ]
+    }
+
     fn block(self, _input: ESDRBlockInput) -> Block {
         let mut last = Complex32::new(0.0, 0.0); // store sample x[n-1]
         Apply::new(move |v: &Complex32| -> f32 {
@@ -20,12 +27,5 @@ impl ESDRBlock for FMDemodulatorBlock {
             last = *v;
             arg
         })
-    }
-
-    fn params(self) -> Vec<Param> {
-        vec![
-            Param::input_stream("in").build(),
-            Param::output_stream("out").build(),
-        ]
     }
 }

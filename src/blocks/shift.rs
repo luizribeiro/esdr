@@ -14,6 +14,13 @@ impl ESDRBlock for ShiftBlock {
         "Shift"
     }
 
+    fn params(self) -> Vec<Param> {
+        vec![
+            Param::input_stream("in").build(),
+            Param::output_stream("out").build(),
+        ]
+    }
+
     fn block(self, _input: ESDRBlockInput) -> Block {
         let mut last = Complex32::new(1.0, 0.0);
         let add = Complex32::from_polar(
@@ -24,12 +31,5 @@ impl ESDRBlock for ShiftBlock {
             last *= add;
             last * v
         })
-    }
-
-    fn params(self) -> Vec<Param> {
-        vec![
-            Param::input_stream("in").build(),
-            Param::output_stream("out").build(),
-        ]
     }
 }

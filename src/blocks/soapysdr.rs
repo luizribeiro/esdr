@@ -13,15 +13,6 @@ impl ESDRBlock for SoapySDRBlock {
         "Soapy SDR"
     }
 
-    fn block(self, input: ESDRBlockInput) -> Block {
-        SoapySourceBuilder::new()
-            .filter("")
-            .freq(input.scalar("freq") + consts::FREQ_OFFSET)
-            .sample_rate(consts::RATE)
-            .gain(input.scalar("gain"))
-            .build()
-    }
-
     fn params(self) -> Vec<Param> {
         vec![
             Param::output_stream("out").build(),
@@ -31,5 +22,14 @@ impl ESDRBlock for SoapySDRBlock {
                 .build(),
             Param::scalar("gain").initial_value(30.0).build(),
         ]
+    }
+
+    fn block(self, input: ESDRBlockInput) -> Block {
+        SoapySourceBuilder::new()
+            .filter("")
+            .freq(input.scalar("freq") + consts::FREQ_OFFSET)
+            .sample_rate(consts::RATE)
+            .gain(input.scalar("gain"))
+            .build()
     }
 }

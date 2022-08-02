@@ -13,11 +13,11 @@ impl ESDRBlock for AudioOutputBlock {
         "Audio Output"
     }
 
-    fn block(self, _input: ESDRBlockInput) -> Block {
-        AudioSink::new(consts::AUDIO_RATE, 1)
-    }
-
     fn params(self) -> Vec<Param> {
         vec![Param::input_stream("in").build()]
+    }
+
+    fn block(self, _input: ESDRBlockInput) -> Block {
+        AudioSink::new(consts::AUDIO_RATE, 1)
     }
 }

@@ -14,6 +14,15 @@ impl ESDRBlock for Resamp2Block {
         "Resamp 2"
     }
 
+    fn params(self) -> Vec<Param> {
+        vec![
+            Param::input_stream("in").build(),
+            Param::scalar("cutoff").initial_value(2000.0).build(),
+            Param::scalar("transition").initial_value(10000.0).build(),
+            Param::output_stream("out").build(),
+        ]
+    }
+
     fn block(self, input: ESDRBlockInput) -> Block {
         let cutoff = input.scalar("cutoff") / (consts::AUDIO_RATE * consts::AUDIO_MULT) as f64;
         let transition =
@@ -24,14 +33,5 @@ impl ESDRBlock for Resamp2Block {
             consts::AUDIO_MULT as usize,
             audio_filter_taps,
         )
-    }
-
-    fn params(self) -> Vec<Param> {
-        vec![
-            Param::input_stream("in").build(),
-            Param::scalar("cutoff").initial_value(2000.0).build(),
-            Param::scalar("transition").initial_value(10000.0).build(),
-            Param::output_stream("out").build(),
-        ]
     }
 }
