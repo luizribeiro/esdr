@@ -9,17 +9,15 @@ use crate::ui::ESDRValueType;
 use crate::ui::UpdateScalarPayload;
 
 #[derive(Clone, Debug)]
-#[enum_dispatch(ParamTrait)]
 pub enum Param {
     Scalar(ScalarParam),
     InputStream(InputStream),
     OutputStream(OutputStream),
 }
 
-#[enum_dispatch]
-pub trait ParamTrait {
+pub trait ParamTrait<T> {
     fn add_param(self, graph: &mut ESDRGraph, node_id: NodeId) -> ();
-    fn widget(&mut self, ui: &mut egui::Ui, node_id: NodeId) -> Vec<ESDRResponse>;
+    fn widget(&mut self, ui: &mut egui::Ui, node_id: NodeId, value: T) -> Vec<ESDRResponse>;
 }
 
 impl Param {
@@ -40,13 +38,13 @@ impl Param {
 #[builder(public, setter(into), build_fn(private, name = "build_impl"))]
 pub struct ScalarParam {
     pub name: String,
-    #[builder(default = "0.0", setter(prefix = "initial"))]
-    pub value: f64,
+    #[builder(default = "0.0")]
+    pub initial_value: f64,
     #[builder(default = "false")]
     pub allow_updates: bool,
 }
 
-impl ParamTrait for ScalarParam {
+impl ParamTrait<&mut f64> for ScalarParam {
     fn add_param(self, graph: &mut ESDRGraph, node_id: NodeId) -> () {
         graph.add_input_param(
             node_id,
@@ -54,22 +52,23 @@ impl ParamTrait for ScalarParam {
             ESDRDataType::Scalar,
             ESDRValueType::Scalar {
                 node_id,
-                config: self.clone(),
+                value: self.initial_value,
+                config: self,
             },
             InputParamKind::ConstantOnly,
             true,
         );
     }
 
-    fn widget(&mut self, ui: &mut egui::Ui, node_id: NodeId) -> Vec<ESDRResponse> {
+    fn widget(&mut self, ui: &mut egui::Ui, node_id: NodeId, value: &mut f64) -> Vec<ESDRResponse> {
         let mut responses = vec![];
         ui.horizontal(|ui| {
             ui.label(&self.name);
-            if ui.add(DragValue::new(&mut self.value)).changed() {
+            if ui.add(DragValue::new(value)).changed() {
                 responses.push(ESDRResponse::UpdateScalar(UpdateScalarPayload {
                     node_id,
                     field: self.name.to_string(),
-                    value: self.value,
+                    value: *value,
                 }));
             }
         });
@@ -89,19 +88,22 @@ pub struct InputStream {
     name: String,
 }
 
-impl ParamTrait for InputStream {
+impl ParamTrait<()> for InputStream {
     fn add_param(self, graph: &mut ESDRGraph, node_id: NodeId) -> () {
         graph.add_input_param(
             node_id,
             self.name.clone(),
             ESDRDataType::Stream,
-            ESDRValueType::Stream,
+            ESDRValueType::InputStream {
+                node_id,
+                config: self,
+            },
             InputParamKind::ConnectionOnly,
             true,
         );
     }
 
-    fn widget(&mut self, ui: &mut egui::Ui, _node_id: NodeId) -> Vec<ESDRResponse> {
+    fn widget(&mut self, ui: &mut egui::Ui, _node_id: NodeId, _value: ()) -> Vec<ESDRResponse> {
         ui.label(&self.name);
         vec![]
     }
@@ -119,12 +121,12 @@ pub struct OutputStream {
     name: String,
 }
 
-impl ParamTrait for OutputStream {
+impl ParamTrait<()> for OutputStream {
     fn add_param(self, graph: &mut ESDRGraph, node_id: NodeId) -> () {
         graph.add_output_param(node_id, self.name.clone(), ESDRDataType::Stream);
     }
 
-    fn widget(&mut self, ui: &mut egui::Ui, _node_id: NodeId) -> Vec<ESDRResponse> {
+    fn widget(&mut self, ui: &mut egui::Ui, _node_id: NodeId, _value: ()) -> Vec<ESDRResponse> {
         ui.label(&self.name);
         vec![]
     }

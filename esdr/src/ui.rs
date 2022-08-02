@@ -8,6 +8,7 @@ use strum_macros::EnumIter;
 use uuid::Uuid;
 
 use crate::blocks::*;
+use crate::param::InputStream;
 use crate::param::Param;
 use crate::param::ParamTrait;
 use crate::param::ScalarParam;
@@ -27,9 +28,13 @@ pub enum ESDRDataType {
 
 #[derive(Clone, Debug)]
 pub enum ESDRValueType {
-    Stream,
+    InputStream {
+        node_id: NodeId,
+        config: InputStream,
+    },
     Scalar {
         node_id: NodeId,
+        value: f64,
         config: ScalarParam,
     },
 }
@@ -102,7 +107,13 @@ impl NodeTemplateTrait for ESDRBlockType {
         node_id: NodeId,
     ) {
         for param in self.params() {
-            param.add_param(graph, node_id);
+            // this is needed because enum_dispatch doesn't work with traits that have
+            // associated types. see https://gitlab.com/antonok/enum_dispatch/-/issues/50
+            match param {
+                Param::Scalar(p) => p.add_param(graph, node_id),
+                Param::InputStream(p) => p.add_param(graph, node_id),
+                Param::OutputStream(p) => p.add_param(graph, node_id),
+            }
         }
     }
 }
@@ -118,14 +129,20 @@ impl NodeTemplateIter for AllESDRBlockTypes {
 
 impl WidgetValueTrait for ESDRValueType {
     type Response = ESDRResponse;
-    fn value_widget(&mut self, param_name: &str, ui: &mut egui::Ui) -> Vec<ESDRResponse> {
+    fn value_widget(&mut self, _param_name: &str, ui: &mut egui::Ui) -> Vec<ESDRResponse> {
         let mut responses = vec![];
         match self {
-            ESDRValueType::Stream => {
-                ui.label(param_name);
+            ESDRValueType::InputStream {
+                node_id, config, ..
+            } => {
+                responses.append(&mut config.widget(ui, *node_id, ()));
             }
-            ESDRValueType::Scalar { node_id, config } => {
-                responses.append(&mut config.widget(ui, *node_id));
+            ESDRValueType::Scalar {
+                node_id,
+                value,
+                config,
+            } => {
+                responses.append(&mut config.widget(ui, *node_id, value));
             }
         }
         responses
